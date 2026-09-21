@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>XORUN UZB DRIVE 🇺🇿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- The 3D world renders here from the moment the page opens, behind the
+       menu. PLAY does not "load" anything — it just hands you the wheel. -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ===================== MAIN MENU ===================== -->
+  <div id="screen-menu" class="screen screen-overlay">
+    <div class="menu-content">
+      <div class="menu-flag">🇺🇿</div>
+      <h1 class="menu-title">XORUN<span>UZB DRIVE</span></h1>
+      <p class="menu-subtitle">Kichik Ittifoq &middot; Toshkent viloyati</p>
+
+      <div class="menu-buttons">
+        <button id="btn-play" class="menu-btn menu-btn-primary" type="button">PLAY</button>
+        <button id="btn-garage" class="menu-btn" type="button">GARAGE</button>
+        <button id="btn-map" class="menu-btn" type="button">MAP</button>
+        <button id="btn-settings" class="menu-btn" type="button">SETTINGS</button>
+      </div>
+
+      <div id="engine-status" class="engine-status">3D dvigatel ishga tushmoqda&hellip;</div>
+    </div>
+  </div>
+
+  <!-- ===================== GARAGE ===================== -->
+  <div id="screen-garage" class="screen hidden">
+    <div class="panel-header">
+      <button class="back-btn" data-back="menu" type="button">&larr; Orqaga</button>
+      <h2>XORUN GARAGE</h2>
+    </div>
+    <p class="panel-note">Tanlangan mashina PLAY bosilganda boshqariladi. Qulflangan mashinalar tanga evaziga ochiladi.</p>
+    <div id="garage-list" class="garage-list"></div>
+  </div>
+
+  <!-- ===================== MAP ===================== -->
+  <div id="screen-map" class="screen hidden">
+    <div class="panel-header">
+      <button class="back-btn" data-back="menu" type="button">&larr; Orqaga</button>
+      <h2>MAP</h2>
+    </div>
+    <div class="map-panel">
+      <div class="map-card map-card-active">
+        <div class="map-card-name">Kichik Ittifoq &mdash; Toshkent viloyati</div>
+        <div class="map-card-desc">Mahalla ko&lsquo;chasi, uylar va darvozalar, kichik do&lsquo;kon, chorraha va chiziq bilan belgilangan parking. Bu aniq geografik nusxa emas &mdash; Kichik Ittifoqdan ilhomlangan o&lsquo;zbekona muhit.</div>
+        <div class="map-card-tag">OCHIQ</div>
+      </div>
+      <div class="map-card map-card-locked">
+        <div class="map-card-name">Chorsu bozori</div>
+        <div class="map-card-desc">Keyingi yangilanishda.</div>
+        <div class="map-card-tag">🔒 QULFLANGAN</div>
+      </div>
+      <div class="map-card map-card-locked">
+        <div class="map-card-name">Registon halqa yo&lsquo;li</div>
+        <div class="map-card-desc">Keyingi yangilanishda.</div>
+        <div class="map-card-tag">🔒 QULFLANGAN</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <div id="screen-settings" class="screen hidden">
+    <div class="panel-header">
+      <button class="back-btn" data-back="menu" type="button">&larr; Orqaga</button>
+      <h2>SETTINGS</h2>
+    </div>
+    <div class="settings-panel">
+      <label class="settings-row">
+        <span>Rul sezgirligi</span>
+        <input type="range" id="setting-steer" min="0.5" max="1.5" step="0.05" value="1" />
+      </label>
+      <label class="settings-row">
+        <span>Kamera silliqligi</span>
+        <input type="range" id="setting-camera" min="0.04" max="0.28" step="0.01" value="0.12" />
+      </label>
+      <label class="settings-row settings-row-toggle">
+        <span>Mobil tugmalarni ko&lsquo;rsatish</span>
+        <input type="checkbox" id="setting-force-touch" />
+      </label>
+      <label class="settings-row settings-row-toggle">
+        <span>Faralar</span>
+        <input type="checkbox" id="setting-headlights" checked />
+      </label>
+      <label class="settings-row settings-row-toggle">
+        <span>Soyalar (tezlikka ta&rsquo;sir qiladi)</span>
+        <input type="checkbox" id="setting-shadows" checked />
+      </label>
+      <label class="settings-row settings-row-toggle">
+        <span>Debug ma&rsquo;lumot (FPS, koordinata)</span>
+        <input type="checkbox" id="setting-debug" />
+      </label>
+    </div>
+  </div>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <div class="hud-top-left">
+      <div class="hud-chip">
+        <span class="hud-label">Tezlik</span>
+        <span id="hud-speed" class="hud-value">0</span>
+        <span class="hud-unit">km/s</span>
+        <span id="hud-gear" class="hud-gear">D</span>
+      </div>
+    </div>
+
+    <div class="hud-top-right">
+      <div class="hud-chip hud-chip-sm hud-chip-level">
+        <span class="hud-icon">🏅</span>
+        <span class="hud-label">LEVEL</span>
+        <span id="hud-level" class="hud-value">1</span>
+      </div>
+      <div class="hud-chip hud-chip-sm hud-chip-xp">
+        <span class="hud-icon">⭐</span>
+        <span id="hud-xp" class="hud-value">0/200</span>
+        <span class="hud-xp-bar"><span id="hud-xp-fill" class="hud-xp-fill"></span></span>
+      </div>
+      <div class="hud-chip hud-chip-sm"><span class="hud-icon">🪙</span><span id="hud-coins" class="hud-value">0</span></div>
+      <div class="hud-chip hud-chip-sm"><span class="hud-icon">⏱</span><span id="hud-time" class="hud-value">00:00</span></div>
+    </div>
+
+    <div class="hud-bottom-left">
+      <div class="hud-damage-wrap">
+        <span class="hud-label">Shikast</span>
+        <div class="hud-damage-bar"><div id="hud-damage-fill" class="hud-damage-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="hud-bottom-right">
+      <button id="btn-reset" class="hud-round-btn" type="button" title="Mashinani qaytarish (R)">⟲</button>
+      <button id="btn-exit" class="hud-round-btn" type="button" title="Menyuga chiqish">✕</button>
+    </div>
+
+    <div id="hud-objective" class="hud-objective">
+      <div class="hud-objective-head">
+        <div id="hud-objective-title" class="hud-objective-title">MISSION</div>
+        <div id="hud-mission-timer" class="hud-mission-timer hidden">⏱ 60s</div>
+      </div>
+      <div id="hud-objective-text" class="hud-objective-text">Erkin haydang</div>
+      <div class="hud-objective-bar"><div id="hud-objective-fill" class="hud-objective-fill"></div></div>
+    </div>
+
+    <div id="hud-arrow" class="hud-arrow">▲<span id="hud-distance" class="hud-distance">0 m</span></div>
+
+    <div id="hud-hint" class="hud-hint">FREE DRIVE &middot; W A S D &mdash; haydash &middot; Space &mdash; tormoz &middot; R &mdash; STARTga qaytish</div>
+  </div>
+
+  <!-- ===================== TOUCH CONTROLS ===================== -->
+  <div id="touch-controls" class="hidden">
+    <div class="touch-left">
+      <button id="touch-left" class="touch-btn touch-btn-steer" type="button">◀</button>
+      <button id="touch-right" class="touch-btn touch-btn-steer" type="button">▶</button>
+    </div>
+    <div class="touch-right">
+      <button id="touch-brake" class="touch-btn touch-btn-brake" type="button">TORMOZ</button>
+      <button id="touch-reverse" class="touch-btn touch-btn-pedal" type="button">ORQAGA</button>
+      <button id="touch-forward" class="touch-btn touch-btn-pedal touch-btn-gas" type="button">GAZ</button>
+    </div>
+  </div>
+
+  <!-- ===================== RESULT ===================== -->
+  <div id="result-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-emoji">🎉</div>
+      <div class="modal-title">PARKING COMPLETED!</div>
+      <div class="modal-rewards">
+        <div class="modal-reward">+<span id="result-coins">100</span> COINS</div>
+        <div class="modal-reward modal-reward-xp">+<span id="result-xp">0</span> XP</div>
+      </div>
+      <div class="modal-stats">
+        <div class="modal-stat"><span class="modal-stat-label">Vaqt</span><span id="result-time" class="modal-stat-value">00:00</span></div>
+        <div class="modal-stat"><span class="modal-stat-label">Ball</span><span id="result-score" class="modal-stat-value">0</span></div>
+        <div class="modal-stat"><span class="modal-stat-label">Shikast</span><span id="result-damage" class="modal-stat-value">0%</span></div>
+        <div class="modal-stat"><span class="modal-stat-label">Aniqlik</span><span id="result-accuracy" class="modal-stat-value">0%</span></div>
+      </div>
+      <div class="modal-buttons">
+        <button id="btn-result-retry" class="menu-btn menu-btn-primary" type="button">Yana haydash</button>
+        <button id="btn-result-menu" class="menu-btn" type="button">Bosh menyu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== DEBUG / ERROR ===================== -->
+  <div id="debug-panel" class="debug-panel hidden"></div>
+
+  <div id="error-banner" class="error-banner hidden">
+    <div class="error-title">Xatolik</div>
+    <div id="error-message" class="error-message"></div>
+  </div>
+
+  <!--
+    Three.js is loaded with an ordinary, synchronous script tag: the simplest
+    and most reliable form. js/three-fallback.js runs right after it and pulls
+    the library from another CDN only if THREE is still undefined.
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/three-fallback.js"></script>
+
+  <!-- Game modules: each only DEFINES things, none of them touch THREE while
+       loading, so a slow or failed library can never leave the menu dead. -->
+  <script src="js/ui.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/car.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/parking.js"></script>
+  <script src="js/traffic.js"></script>
+  <script src="js/missions.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
